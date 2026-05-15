@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import cors from 'cors'
 import { globalErrorHandler } from './middlewares/globalErrorHandler';
+import routes from './routes';
 
 const app: Application = express();
 config();
@@ -41,6 +42,9 @@ const PORT = process.env.PORT || 4001;
 app.get('/api/health', (req: Request, res: Response) => {
     return res.status(200).send({ success: true, message: 'Server running....' });
 })
+
+// all api endpoint
+app.use('/api',routes);
 
 app.listen(PORT, () => {
     console.log(`Server is started at ${PORT}`);
