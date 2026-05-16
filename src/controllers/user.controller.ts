@@ -42,7 +42,7 @@ export const signup = async (req: Request, res: Response) => {
                     });
                 }
             }
-            
+
             return res.status(201).json(
                 new ApiResponse(200, newUser, "User Registered Successfully")
             )
@@ -97,3 +97,51 @@ export const signin = async (req: Request, res: Response) => {
     }
 }
 
+// update user for Admin
+export const updateUser = async (req: Request, res: Response) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (user) {
+            user.name = req.body.name || user.name;
+            user.email = req.body.email || user.email;
+            user.role = req.body.role || user.role;
+            user.isActive = req.body.isActive !== undefined ? req.body.isActive : user.isActive;
+
+            user.studentClass = req.body.studentClass || user.studentClass;
+            user.teacherSubject = req.body.teacherSubject || user.teacherSubject;
+
+            if (req.body.password) {
+                user.password = req.body.password;
+            }
+
+            const updatedUser = await user.save();
+
+            if ((req as any).user) {
+                if ((req as any).user) {
+                    await activityLog({
+                        userId: (req as any).user._id.toString(),
+                        action: "Updated User",
+                        details: `Updated user with email: ${updatedUser.email}`,
+                    });
+                }
+            }
+
+            res.json({
+                _id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                isActive: updatedUser.isActive,
+                studentClass: updatedUser.studentClass,
+                teacherSubject: updatedUser.teacherSubject,
+                message: "User updated successfully",
+            });
+        } else {
+            throw new ApiError(400, "User not found");
+        }
+    } catch (error) {
+        console.log("Update user Error:: ", error);
+        throw new ApiError(500, 'Internal server Error');
+    }
+}
