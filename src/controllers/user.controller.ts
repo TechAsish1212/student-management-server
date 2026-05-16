@@ -3,6 +3,7 @@ import { User } from "../models/User.model";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { generateToken } from "../utils/generateToken";
+import { activityLog } from "../utils/activityLogs";
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -31,6 +32,17 @@ export const signup = async (req: Request, res: Response) => {
         });
 
         if (newUser) {
+
+            if ((req as any).user) {
+                if ((req as any).user) {
+                    await activityLog({
+                        userId: (req as any).user._id,
+                        action: "Registered User",
+                        details: `Registered user with email: ${newUser.email}`,
+                    });
+                }
+            }
+            
             return res.status(201).json(
                 new ApiResponse(200, newUser, "User Registered Successfully")
             )
