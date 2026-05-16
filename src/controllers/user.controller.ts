@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { generateToken } from "../utils/generateToken";
 import { activityLog } from "../utils/activityLogs";
+import { AuthRequest } from "../middlewares/auth";
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -156,12 +157,98 @@ export const deleteUser = async (req: Request, res: Response) => {
                     details: `Deleted user with email: ${user.email}`,
                 });
             }
-            return res.status(200).json({message:"User deleted Successfully"});
-        }else{
-            throw new ApiError(404,"User not found");
+            return res.status(200).json({ message: "User deleted Successfully" });
+        } else {
+            throw new ApiError(404, "User not found");
         }
     } catch (error) {
         console.log("Delete Error:: ", error);
         throw new ApiError(500, "Internal server Error");
+    }
+}
+
+// get user profile 
+export const getUserProfile = async (req: AuthRequest, res: Response) => {
+    try {
+        if (req.user) {
+            res.json({
+                user: {
+                    name: req.user.name,
+                    email: req.user.email,
+                    role: req.user.role,
+                }
+            })
+        }
+    } catch (error) {
+        console.log("Get user Error:: ", error);
+        throw new ApiError(500, "Internal server error");
+    }
+}
+
+// logout
+export const logout = async (req: Request, res: Response) => {
+    try {
+        res.cookie("jwt", "", {
+            httpOnly: true,
+            expires: new Date(0)
+        })
+        return res.status(201).json({ message: "User Logout Successfully" });
+    } catch (error) {
+        console.log("Logout Error:: ", error);
+        throw new ApiError(500, "Internal server error");
+    }
+}
+
+// get all users
+export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+    try {
+        // query params
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const role = req.query.role as string;
+        const search = req.query.search as string;
+        const skip = (page - 1) * limit;
+
+        // filter
+        const filter: any = {};
+
+        if (role && role !== 'all' && role !== "") {
+            filter.role = role;
+        }
+
+        if (search) {
+            filter.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } }
+            ]
+        }
+
+        // fetch user with pagination and filter
+        const [total, users] = await Promise.all([
+            User.countDocuments(filter),
+            User.find(filter)
+                .select("-password")
+                // .populate("studentClass", "_id name section")
+                // .populate("teacherSubject", "_id name code")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+        ])
+
+        // res
+        res.json({
+            users,
+            pagination: {
+                total,
+                page,
+                pages: Math.ceil(total / limit),
+                limit,
+            },
+        });
+
+    } catch (error) {
+        console.log("all users Error:: ",error);
+
+        throw new ApiError(500,"Internal server error");
     }
 }
