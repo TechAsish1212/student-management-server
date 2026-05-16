@@ -34,13 +34,11 @@ export const signup = async (req: Request, res: Response) => {
         if (newUser) {
 
             if ((req as any).user) {
-                if ((req as any).user) {
-                    await activityLog({
-                        userId: (req as any).user._id,
-                        action: "Registered User",
-                        details: `Registered user with email: ${newUser.email}`,
-                    });
-                }
+                await activityLog({
+                    userId: (req as any).user._id,
+                    action: "Registered User",
+                    details: `Registered user with email: ${newUser.email}`,
+                });
             }
 
             return res.status(201).json(
@@ -97,7 +95,7 @@ export const signin = async (req: Request, res: Response) => {
     }
 }
 
-// update user for Admin
+// update user (Admin)
 export const updateUser = async (req: Request, res: Response) => {
     try {
         const user = await User.findById(req.params.id);
@@ -118,13 +116,11 @@ export const updateUser = async (req: Request, res: Response) => {
             const updatedUser = await user.save();
 
             if ((req as any).user) {
-                if ((req as any).user) {
-                    await activityLog({
-                        userId: (req as any).user._id.toString(),
-                        action: "Updated User",
-                        details: `Updated user with email: ${updatedUser.email}`,
-                    });
-                }
+                await activityLog({
+                    userId: (req as any).user._id.toString(),
+                    action: "Updated User",
+                    details: `Updated user with email: ${updatedUser.email}`,
+                });
             }
 
             res.json({
@@ -143,5 +139,29 @@ export const updateUser = async (req: Request, res: Response) => {
     } catch (error) {
         console.log("Update user Error:: ", error);
         throw new ApiError(500, 'Internal server Error');
+    }
+}
+
+// delete user(admin)
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (user) {
+            await user.deleteOne();
+
+            if ((req as any).user) {
+                await activityLog({
+                    userId: (req as any).user._id.toString(),
+                    action: "Deleted User",
+                    details: `Deleted user with email: ${user.email}`,
+                });
+            }
+            return res.status(200).json({message:"User deleted Successfully"});
+        }else{
+            throw new ApiError(404,"User not found");
+        }
+    } catch (error) {
+        console.log("Delete Error:: ", error);
+        throw new ApiError(500, "Internal server Error");
     }
 }
