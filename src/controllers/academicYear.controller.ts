@@ -94,3 +94,31 @@ export const updateAcademicYear = async (req: Request, res: Response) => {
         throw new ApiError(500, "Internal Server Error");
     }
 }
+
+// delete academic year
+export const deleteAcademicYear = async (req: Request, res: Response) => {
+    try {
+        const year = await AcademicYear.findById(req.params.id);
+        if (!year) {
+            throw new ApiError(404, "Academic Year Not Found");
+        }
+        if (year) {
+            if (year.isCurrent) {
+                throw new ApiError(400, "Can't delete this current academic year");
+            }
+        }
+        await year.deleteOne();
+
+        await activityLog({
+            userId: (req as any).user._id,
+            action: `Delete academic year ${year.name}`,
+        })
+        return res.status(200).json({ message: 'Academic year deleted successfully' });
+    } catch (error) {
+        console.log('Delete academic year error:: ', error);
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, "Internal server error");
+    }
+}
