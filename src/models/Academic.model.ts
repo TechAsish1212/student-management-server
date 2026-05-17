@@ -29,3 +29,4 @@ const academicYearSchema = new Schema<IAcademicYear>({
 const AcademicYear = mongoose.model<IAcademicYear>('AcademicYear', academicYearSchema);
 
 export { AcademicYear }
+
