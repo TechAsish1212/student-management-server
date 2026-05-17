@@ -38,3 +38,20 @@ export const createAcademicYear = async (req: Request, res: Response) => {
         throw new ApiError(500, "Internal Server Error");
     }
 }
+
+// get academic year
+export const getCurrentAcademicYear = async (req: Request, res: Response) => {
+    try {
+        const currentYear = await AcademicYear.findOne({ isCurrent: true });
+        if (!currentYear) {
+            throw new ApiError(404, 'No current academic year found');
+        } else {
+            res.status(200).json(currentYear);
+        }
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, "Internal server Error")
+    }
+}
