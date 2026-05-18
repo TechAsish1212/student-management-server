@@ -122,3 +122,43 @@ export const deleteAcademicYear = async (req: Request, res: Response) => {
         throw new ApiError(500, "Internal server error");
     }
 }
+
+// get all academic year
+export const getAllAcademicYear = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = req.query.search as string;
+        const skip = (page - 1) * limit;
+
+
+        const query: any = {};
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+        const [total, years] = await Promise.all([
+            AcademicYear.countDocuments(query),
+            AcademicYear.find(query)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+        ]);
+
+        return res.status(200).json({
+            years,
+            pagination: {
+                total,
+                page,
+                pages: Math.ceil(total / limit)
+            }
+        })
+
+    } catch (error) {
+        console.log('Get all academic year:: ', error);
+
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, "Internal Server Error");
+    }
+}
