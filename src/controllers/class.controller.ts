@@ -63,3 +63,91 @@ export const createClass = async (req: Request, res: Response) => {
     }
 };
 
+// update class
+export const updateClass = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const {
+            name,
+            academicYear,
+            classTeacher,
+            subjects,
+            students,
+            capacity
+        } = req.body;
+
+        const existingClass = await Class.findById(id);
+
+        if (!existingClass) {
+            throw new ApiError(404, "Class Not Found");
+        }
+
+        if (name || academicYear) {
+            const query: any = {
+                _id: { $ne: id },
+            };
+            
+            if (name) query.name = name.trim();
+            if (academicYear) query.academicYear = academicYear;
+            
+            if (name && academicYear) {
+                query.name = name.trim();
+                query.academicYear = academicYear;
+            } 
+
+            else if (name && !academicYear) {
+                query.name = name.trim();
+                query.academicYear = existingClass.academicYear;
+            }
+            else if (!name && academicYear) {
+                query.name = existingClass.name;
+                query.academicYear = academicYear;
+            }
+
+            const duplicateClass = await Class.findOne(query);
+
+            if (duplicateClass) {
+                throw new ApiError(
+                    400,
+                    "Another class already exists with this name in this academic year"
+                );
+            }
+        }
+
+        if (name) existingClass.name = name.trim();
+        if (academicYear) existingClass.academicYear = academicYear;
+        if (classTeacher !== undefined) existingClass.classTeacher = classTeacher;
+        if (subjects !== undefined) existingClass.subjects = subjects;
+        if (students !== undefined) existingClass.students = students;
+        if (capacity !== undefined) existingClass.capacity = capacity;
+
+
+        const updatedClass = await existingClass.save();
+
+
+        await activityLog({
+            userId: (req as any).user.id,
+            action: `Updated class: ${updatedClass.name}`,
+        });
+
+        return res.status(200).json({
+            message: "Class updated successfully.",
+            data: updatedClass,
+        });
+
+    } catch (error: any) {
+        console.log("updated class error:: ", error);
+
+
+        if (error.code === 11000) {
+            throw new ApiError(400, "Class with this name already exists in this academic year");
+        }
+
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
+        throw new ApiError(500, "Internal Server Error");
+    }
+};
