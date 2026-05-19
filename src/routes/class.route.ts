@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { authorize, authProtect } from "../middlewares/auth";
-import { createClass } from "../controllers/class.controller";
+import { createClass, updateClass } from "../controllers/class.controller";
 
 const classRouter=Router();
-classRouter.post('/create',createClass);
+classRouter.post('/create',authProtect,authorize(['admin']),createClass);
+classRouter.patch('/update/:id',authProtect,authorize(['admin']),updateClass);
+
 
 export default classRouter;
