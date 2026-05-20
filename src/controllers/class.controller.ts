@@ -87,14 +87,14 @@ export const updateClass = async (req: Request, res: Response) => {
             const query: any = {
                 _id: { $ne: id },
             };
-            
+
             if (name) query.name = name.trim();
             if (academicYear) query.academicYear = academicYear;
-            
+
             if (name && academicYear) {
                 query.name = name.trim();
                 query.academicYear = academicYear;
-            } 
+            }
 
             else if (name && !academicYear) {
                 query.name = name.trim();
@@ -151,3 +151,34 @@ export const updateClass = async (req: Request, res: Response) => {
         throw new ApiError(500, "Internal Server Error");
     }
 };
+
+// delete class
+export const deleteClass = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const existingClass = await Class.findById(id);
+        if (!existingClass) {
+            throw new ApiError(404, "Class Not Found");
+        }
+
+        await Class.findByIdAndDelete(id);
+
+        await activityLog({
+            userId: (req as any).user.id,
+            action: `Deleted class: ${existingClass.name}`
+        });
+
+        return res.status(200).json({
+            message: "Class deleted successfully"
+        })
+
+    } catch (error) {
+        console.log("Deleted class error: ", error);
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, "Internal Server Error");
+    }
+}
+
