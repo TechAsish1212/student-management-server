@@ -182,3 +182,47 @@ export const deleteClass = async (req: Request, res: Response) => {
     }
 }
 
+// get all class 
+export const getAllClass = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = (req.query.search as string) || "";
+        const skip = (page - 1) * limit;
+
+        const filter: any = {};
+        if (search) {
+            filter.name = {
+                $regex: search,
+                $options: 'i'
+            }
+        }
+
+        const [total, classes] = await Promise.all([
+            Class.countDocuments(filter),
+            Class.find(filter)
+                .populate("academicYear", "name")
+                .populate("classTeacher", "name email")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+        ])
+
+        return res.status(200).json({
+            message:"Classes fetched successfully",
+            classes,
+            pagination:{
+                total,
+                page,
+                pages:Math.ceil(total/limit)
+            }
+        })
+
+    } catch (error) {
+        console.log("Get all class error: ", error);
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, "Internal Server Error");
+    }
+}
