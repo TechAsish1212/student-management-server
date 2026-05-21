@@ -135,3 +135,25 @@ export const getAllSubject = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 }
+
+// delete subjects
+export const deleteSubject=async(req:Request,res:Response)=>{
+    try {
+        const {id}=req.params;
+        const deleteSubject=await Subject.findByIdAndDelete(id);
+        if(!deleteSubject){
+            throw new ApiError(404,"Subject Not Found");
+        }
+
+        const userId=(req as any).user._id.toString();
+        await activityLog({
+            userId,
+            action:`Deleted subject: ${deleteSubject.name} ${deleteSubject.code}`
+        })
+
+        res.status(200).json({message:"Subjects Deleted Successfully"});
+
+    } catch (error) {
+        
+    }
+}
