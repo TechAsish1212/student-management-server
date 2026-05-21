@@ -92,3 +92,46 @@ export const updateSubject = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 }
+
+// get all subjects
+export const getAllSubject = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = req.query.search as string;
+        const skip = (page - 1) * limit;
+
+        const query: any = {};
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { code: { $regex: search, $options: "i" } },
+            ];
+        }
+
+        const [total, subjects] = await Promise.all([
+            Subject.countDocuments(query),
+            Subject
+                .find(query)
+                .populate("teacher", "name email")
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit),
+        ]);
+
+        res.json({
+            subjects,
+            pagination: {
+                total,
+                page,
+                pages: Math.ceil(total / limit),
+            },
+        });
+
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json({ message: error.message });
+        }
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
