@@ -8,17 +8,26 @@ import cors from 'cors'
 import { globalErrorHandler } from './middlewares/globalErrorHandler';
 import routes from './routes';
 
-const app: Application = express();
+import { serve } from 'inngest/express';
+import { inngest,functions } from './inngest';
+import { generateTimeTable } from './inngest/functions';
+import { SeederAdmin } from './utils/admin.seeder';
+
 config();
+const app: Application = express();
 
 // Database connection
 connectDB();
+
+// seed admin user
+SeederAdmin();
 
 // middleware
 app.use(helmet()); // security middleware to set various HTTP headers for app
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
+app.use('/api/inngest', serve({ client: inngest, functions: functions }))
 
 // cors
 app.use(cors({
@@ -44,7 +53,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 })
 
 // all api endpoint
-app.use('/api',routes);
+app.use('/api', routes);
 
 app.listen(PORT, () => {
     console.log(`Server is started at ${PORT}`);
