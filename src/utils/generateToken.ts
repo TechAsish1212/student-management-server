@@ -15,4 +15,5 @@ export const generateToken=(userId:string,res:Response)=>{
         maxAge:30*24*60*60*1000,
         path:'/'
     })
+    return token;
 }
